@@ -1,0 +1,10 @@
+echo "🚀 Running pre-push checks..."
+
+# Run eslint on entire codebase
+npm run lint || exit 1
+
+# Run prettier check (no auto-fix, just verify)
+npm run format:check || exit 1
+
+
+echo "✅ Pre-push checks passed!"
