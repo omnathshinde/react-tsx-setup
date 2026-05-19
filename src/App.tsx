@@ -103,17 +103,19 @@ export default function App() {
 	}
 
 	async function createTodo(): Promise<void> {
+		const formData = new FormData();
+		formData.append("title", form.title);
+		formData.append("description", form.description);
+		formData.append("status", form.status);
+		if (form.reminderAt) {
+			formData.append("reminderAt", form.reminderAt);
+		}
+		if (form.file) {
+			formData.append("file", form.file);
+		}
 		const response = await fetch(`${API_BASE_URL}/todos`, {
 			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				title: form.title,
-				description: form.description,
-				status: form.status,
-				reminderAt: form.reminderAt || undefined,
-			}),
+			body: formData,
 		});
 
 		if (!response.ok) {
@@ -125,19 +127,20 @@ export default function App() {
 		if (!selectedTodo) {
 			return;
 		}
+		const formData = new FormData();
+		formData.append("title", form.title);
+		formData.append("description", form.description);
+		formData.append("status", form.status);
+		if (form.reminderAt) {
+			formData.append("reminderAt", form.reminderAt);
+		}
+		if (form.file) {
+			formData.append("file", form.file);
+		}
 		const response = await fetch(`${API_BASE_URL}/todos/${selectedTodo.id}`, {
 			method: "PATCH",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				title: form.title,
-				description: form.description,
-				status: form.status,
-				reminderAt: form.reminderAt || undefined,
-			}),
+			body: formData,
 		});
-
 		if (!response.ok) {
 			throw new Error("Failed to update todo");
 		}
@@ -282,6 +285,31 @@ export default function App() {
 											<Calendar size={16} />
 
 											<span>{new Date(todo.reminderAt).toLocaleString()}</span>
+										</div>
+									)}
+
+									{todo.fileUrl && (
+										<div className="mb-5">
+											<p className="mb-2 text-sm font-medium text-slate-600">
+												Attachment
+											</p>
+
+											{todo.fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+												<img
+													src={todo.fileUrl}
+													alt="Todo Attachment"
+													className="h-40 w-full rounded-xl border object-cover"
+												/>
+											) : (
+												<a
+													href={todo.fileUrl}
+													target="_blank"
+													rel="noreferrer"
+													className="inline-flex items-center rounded-xl border px-4 py-2 text-sm font-medium text-blue-600 hover:bg-slate-50"
+												>
+													View File
+												</a>
+											)}
 										</div>
 									)}
 
