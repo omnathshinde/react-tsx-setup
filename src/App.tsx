@@ -6,6 +6,10 @@ import { Calendar, Plus, Search } from "lucide-react";
 
 import TodoForm, { type TodoFormState } from "./components/TodoForm";
 
+import { Toaster, toast } from "react-hot-toast";
+
+import { socket } from "./socket";
+
 export type TodoStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED";
 
 export interface Todo {
@@ -42,6 +46,23 @@ export default function App() {
 	const [form, setForm] = useState<TodoFormState>(INITIAL_FORM);
 	const isEditing = selectedTodo !== null;
 
+	useEffect(() => {
+		if (Notification.permission !== "granted") {
+			void Notification.requestPermission();
+		}
+	}, []);
+	useEffect(() => {
+		socket.on("todo-reminder", (data) => {
+			toast.success(`🔔 ${data.title}`);
+			if (Notification.permission === "granted") {
+				new Notification(data.title, { body: data.description });
+			}
+		});
+
+		return () => {
+			socket.off("todo-reminder");
+		};
+	}, []);
 	useEffect(() => {
 		void fetchTodos();
 	}, [search, statusFilter]);
@@ -347,6 +368,7 @@ export default function App() {
 					/>
 				</DialogContent>
 			</Dialog>
+			<Toaster position="top-right" />
 		</div>
 	);
 }
