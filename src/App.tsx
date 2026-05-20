@@ -55,6 +55,7 @@ export default function App() {
 	const [search, setSearch] = useState<string>("");
 	const [statusFilter, setStatusFilter] = useState<string>("ALL");
 	const [form, setForm] = useState<TodoFormState>(INITIAL_FORM);
+	const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
 	const isEditing = selectedTodo !== null;
 
 	useEffect(() => {
@@ -78,6 +79,33 @@ export default function App() {
 		void fetchTodos();
 	}, [search, statusFilter]);
 
+	const getFileUrl = useCallback(async (todoId: string): Promise<string | null> => {
+		try {
+			const response = await fetch(`${API_BASE_URL}/todos/${todoId}/file`);
+			if (!response.ok) {
+				throw new Error("failed to fetch file url");
+			}
+			const data: { url: string } = await response.json();
+			return data.url;
+		} catch (error) {
+			console.error(error);
+			return null;
+		}
+	}, []);
+
+	const handleViewFile = async (todoId: string) => {
+		if (fileUrls[todoId]) {
+			window.open(fileUrls[todoId], "_blank");
+			return;
+		}
+		const url = await getFileUrl(todoId);
+		if (!url) return;
+		setFileUrls((prev) => ({
+			...prev,
+			[todoId]: url,
+		}));
+		window.open(url, "_blank");
+	};
 	const fetchTodos = useCallback(async (): Promise<void> => {
 		try {
 			setLoading(true);
@@ -326,21 +354,19 @@ export default function App() {
 												Attachment
 											</p>
 
-											{todo.file.extension.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+											{fileUrls[todo.id] ? (
 												<img
-													src={`${todo.file.url}&t=${Date.now()}`}
+													src={fileUrls[todo.id]}
 													alt="Todo Attachment"
 													className="h-40 w-full rounded-xl border object-cover"
 												/>
 											) : (
-												<a
-													href={todo.file.url}
-													target="_blank"
-													rel="noreferrer"
-													className="inline-flex items-center rounded-xl border px-4 py-2 text-sm font-medium text-blue-600 hover:bg-slate-50"
+												<button
+													onClick={() => void handleViewFile(todo.id)}
+													className="rounded-xl border px-4 py-2 text-sm"
 												>
-													View File
-												</a>
+													Load Image
+												</button>
 											)}
 										</div>
 									)}
