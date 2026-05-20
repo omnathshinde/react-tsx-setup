@@ -18,7 +18,18 @@ export interface Todo {
 	description: string;
 	status: TodoStatus;
 	reminderAt?: string;
-	fileUrl?: string;
+	file?: {
+		key: string;
+		url: string;
+		name: string;
+		size: number;
+		mimeType: string;
+		extension: string;
+		etag: string;
+		uploadedAt: string;
+		status: "UPLOADING" | "UPLOADED" | "FAILED" | "DELETED";
+		storageProvider: string;
+	};
 }
 
 interface GetAllResponse<T> {
@@ -309,21 +320,21 @@ export default function App() {
 										</div>
 									)}
 
-									{todo.fileUrl && (
+									{todo.file && (
 										<div className="mb-5">
 											<p className="mb-2 text-sm font-medium text-slate-600">
 												Attachment
 											</p>
 
-											{todo.fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+											{todo.file.extension.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
 												<img
-													src={todo.fileUrl}
+													src={`${todo.file.url}&t=${Date.now()}`}
 													alt="Todo Attachment"
 													className="h-40 w-full rounded-xl border object-cover"
 												/>
 											) : (
 												<a
-													href={todo.fileUrl}
+													href={todo.file.url}
 													target="_blank"
 													rel="noreferrer"
 													className="inline-flex items-center rounded-xl border px-4 py-2 text-sm font-medium text-blue-600 hover:bg-slate-50"
