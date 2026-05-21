@@ -319,14 +319,12 @@ export default function App() {
 												Attachment
 											</p>
 
-											{fileUrls[todo.id] && (
-												<button
-													onClick={() => void handleViewFile(todo.id)}
-													className="rounded-xl border px-4 py-2 text-sm"
-												>
-													Get Document
-												</button>
-											)}
+											<button
+												onClick={() => void handleViewFile(todo.id)}
+												className="rounded-xl border px-4 py-2 text-sm"
+											>
+												View Document
+											</button>
 										</div>
 									)}
 
