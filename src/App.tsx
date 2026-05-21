@@ -54,7 +54,7 @@ export default function App() {
 	const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
 	const [search, setSearch] = useState<string>("");
 	const [statusFilter, setStatusFilter] = useState<string>("ALL");
-	const [form, setForm] = useState<TodoFormState>(INITIAL_FORM);
+	const [form, setForm] = useState(INITIAL_FORM);
 	const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
 	const isEditing = selectedTodo !== null;
 
@@ -155,91 +155,56 @@ export default function App() {
 		setForm(INITIAL_FORM);
 	}
 
-	function handleChange(field: keyof TodoFormState, value: string | File | null): void {
-		setForm((prev) => ({
-			...prev,
-			[field]: value,
-		}));
-	}
-
-	async function createTodo(): Promise<void> {
-		const formData = new FormData();
-		formData.append("title", form.title);
-		formData.append("description", form.description);
-		formData.append("status", form.status);
-		if (form.reminderAt) {
-			formData.append("reminderAt", form.reminderAt);
-		}
-		if (form.file) {
-			formData.append("file", form.file);
-		}
-		const response = await fetch(`${API_BASE_URL}/todos`, {
-			method: "POST",
-			body: formData,
-		});
-
-		if (!response.ok) {
-			throw new Error("Failed to create todo");
-		}
-	}
-
-	async function updateTodo(): Promise<void> {
-		if (!selectedTodo) {
-			return;
-		}
-		const formData = new FormData();
-		formData.append("title", form.title);
-		formData.append("description", form.description);
-		formData.append("status", form.status);
-		if (form.reminderAt) {
-			formData.append("reminderAt", form.reminderAt);
-		}
-		if (form.file) {
-			formData.append("file", form.file);
-		}
-		const response = await fetch(`${API_BASE_URL}/todos/${selectedTodo.id}`, {
-			method: "PATCH",
-			body: formData,
-		});
-		if (!response.ok) {
-			throw new Error("Failed to update todo");
-		}
-	}
-
-	async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
-		event.preventDefault();
-		try {
-			if (isEditing) {
-				await updateTodo();
-			} else {
-				await createTodo();
+	const saveTodo = useCallback(
+		async (data: TodoFormState): Promise<void> => {
+			try {
+				const formData = new FormData();
+				formData.append("title", data.title);
+				formData.append("description", data.description);
+				formData.append("status", data.status);
+				if (data.reminderAt) {
+					formData.append("reminderAt", data.reminderAt);
+				}
+				if (data.file) {
+					formData.append("file", data.file);
+				}
+				const url = isEditing
+					? `${API_BASE_URL}/todos/${selectedTodo?.id}`
+					: `${API_BASE_URL}/todos`;
+				const method = isEditing ? "PATCH" : "POST";
+				const response = await fetch(url, { method, body: formData });
+				if (!response.ok) {
+					throw new Error("Save failed");
+				}
+				toast.success(isEditing ? "Todo updated" : "Todo created");
+				handleCloseDialog();
+				await fetchTodos();
+			} catch (error) {
+				console.error(error);
+				toast.error("Save failed");
 			}
-			handleCloseDialog();
-			await fetchTodos();
-		} catch (error) {
-			console.error(error);
-		}
-	}
+		},
+		[isEditing, selectedTodo, fetchTodos],
+	);
 
-	async function handleDelete(id: string): Promise<void> {
-		try {
-			const response = await fetch(
-				`${API_BASE_URL}/todos/${id}`,
-
-				{
+	const handleDelete = useCallback(
+		async (id: string): Promise<void> => {
+			try {
+				const response = await fetch(`${API_BASE_URL}/todos/${id}`, {
 					method: "DELETE",
-				},
-			);
-
-			if (!response.ok) {
-				throw new Error("Failed to delete todo");
+				});
+				if (!response.ok) {
+					throw new Error();
+				}
+				toast.success("Deleted");
+				await fetchTodos();
+			} catch (error) {
+				console.error(error);
+				toast.error("Delete failed");
 			}
-
-			await fetchTodos();
-		} catch (error) {
-			console.error(error);
-		}
-	}
+		},
+		[fetchTodos],
+	);
 
 	return (
 		<div className="min-h-screen bg-slate-100">
@@ -365,7 +330,7 @@ export default function App() {
 													onClick={() => void handleViewFile(todo.id)}
 													className="rounded-xl border px-4 py-2 text-sm"
 												>
-													Load Image
+													Get Document
 												</button>
 											)}
 										</div>
@@ -397,12 +362,7 @@ export default function App() {
 				<DialogTitle>{isEditing ? "Update Todo" : "Create Todo"}</DialogTitle>
 
 				<DialogContent>
-					<TodoForm
-						form={form}
-						isEditing={isEditing}
-						onChange={handleChange}
-						onSubmit={handleSubmit}
-					/>
+					<TodoForm form={form} isEditing={isEditing} onSubmit={saveTodo} />
 				</DialogContent>
 			</Dialog>
 			<Toaster position="top-right" />

@@ -1,4 +1,6 @@
 import { Button, MenuItem, TextField } from "@mui/material";
+import { memo, useEffect } from "react";
+import { Controller, useForm } from "react-hook-form";
 
 export interface TodoFormState {
 	title: string;
@@ -11,69 +13,106 @@ export interface TodoFormState {
 interface TodoFormProps {
 	form: TodoFormState;
 	isEditing: boolean;
-	onChange: (field: keyof TodoFormState, value: string | File | null) => void;
-
-	onSubmit: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
+	onSubmit: (data: TodoFormState) => Promise<void>;
 }
 
-export default function TodoForm({ form, isEditing, onChange, onSubmit }: TodoFormProps) {
+function TodoForm({ form, isEditing, onSubmit }: TodoFormProps) {
+	const {
+		register,
+		control,
+		handleSubmit,
+		reset,
+		setValue,
+		formState: { errors, isSubmitting },
+	} = useForm<TodoFormState>({
+		defaultValues: form,
+		mode: "onChange",
+	});
+
+	useEffect(() => {
+		reset(form);
+	}, [form, reset]);
+
 	return (
-		<form onSubmit={onSubmit} className="mt-4 space-y-5">
+		<form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-5">
 			<TextField
 				label="Title"
 				fullWidth
-				required
-				value={form.title}
-				onChange={(event) => onChange("title", event.target.value)}
+				{...register("title", {
+					required: "Title is required",
+					minLength: {
+						value: 3,
+						message: "Minimum 3 characters",
+					},
+				})}
+				error={!!errors.title}
+				helperText={errors.title?.message}
 			/>
 
 			<TextField
 				label="Description"
 				fullWidth
-				required
 				rows={4}
 				multiline
-				value={form.description}
-				onChange={(event) => onChange("description", event.target.value)}
+				{...register("description", {
+					required: "Description is required",
+					minLength: {
+						value: 10,
+						message: "Minimum 10 characters",
+					},
+				})}
+				error={!!errors.description}
+				helperText={errors.description?.message}
 			/>
 
-			<TextField
-				select
-				label="Status"
-				fullWidth
-				value={form.status}
-				onChange={(event) => onChange("status", event.target.value)}
-			>
-				<MenuItem value="PENDING">Pending</MenuItem>
-
-				<MenuItem value="IN_PROGRESS">In Progress</MenuItem>
-
-				<MenuItem value="COMPLETED">Completed</MenuItem>
-			</TextField>
+			<Controller
+				name="status"
+				control={control}
+				render={({ field }) => (
+					<TextField select label="Status" fullWidth {...field}>
+						<MenuItem value="PENDING">Pending</MenuItem>
+						<MenuItem value="IN_PROGRESS">In Progress</MenuItem>
+						<MenuItem value="COMPLETED">Completed</MenuItem>
+					</TextField>
+				)}
+			/>
 
 			<TextField
 				type="datetime-local"
 				label="Reminder"
 				fullWidth
-				value={form.reminderAt}
-				onChange={(event) => onChange("reminderAt", event.target.value)}
+				{...register("reminderAt", {
+					validate: (value) =>
+						!value || new Date(value) > new Date() || "Reminder must be future date",
+				})}
+				error={!!errors.reminderAt}
+				helperText={errors.reminderAt?.message}
 			/>
 
 			<div>
 				<label className="mb-2 block text-sm font-medium text-slate-700">
 					File Upload (Optional)
 				</label>
-
 				<input
 					type="file"
-					onChange={(event) => onChange("file", event.target.files?.[0] || null)}
+					onChange={(e) =>
+						setValue("file", e.target.files?.[0] || null, { shouldValidate: true })
+					}
 					className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm"
 				/>
 			</div>
 
-			<Button type="submit" fullWidth variant="contained" size="large">
+			<Button
+				type="submit"
+				fullWidth
+				variant="contained"
+				size="large"
+				disabled={isSubmitting}
+			>
 				{isEditing ? "Update Todo" : "Create Todo"}
 			</Button>
 		</form>
 	);
 }
+
+export default memo(TodoForm);
