@@ -14,9 +14,17 @@ interface TodoFormProps {
 	form: TodoFormState;
 	isEditing: boolean;
 	onSubmit: (data: TodoFormState) => Promise<void>;
+	onViewFile?: () => void;
+	hasExistingFile?: boolean;
 }
 
-function TodoForm({ form, isEditing, onSubmit }: TodoFormProps) {
+function TodoForm({
+	form,
+	isEditing,
+	onSubmit,
+	onViewFile,
+	hasExistingFile,
+}: TodoFormProps) {
 	const {
 		register,
 		control,
@@ -100,6 +108,11 @@ function TodoForm({ form, isEditing, onSubmit }: TodoFormProps) {
 					}
 					className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm"
 				/>
+				{isEditing && hasExistingFile && (
+					<Button fullWidth variant="outlined" onClick={onViewFile} sx={{ mt: 2 }}>
+						View Current File
+					</Button>
+				)}
 			</div>
 
 			<Button

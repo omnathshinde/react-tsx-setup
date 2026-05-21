@@ -319,13 +319,7 @@ export default function App() {
 												Attachment
 											</p>
 
-											{fileUrls[todo.id] ? (
-												<img
-													src={fileUrls[todo.id]}
-													alt="Todo Attachment"
-													className="h-40 w-full rounded-xl border object-cover"
-												/>
-											) : (
+											{fileUrls[todo.id] && (
 												<button
 													onClick={() => void handleViewFile(todo.id)}
 													className="rounded-xl border px-4 py-2 text-sm"
@@ -362,7 +356,13 @@ export default function App() {
 				<DialogTitle>{isEditing ? "Update Todo" : "Create Todo"}</DialogTitle>
 
 				<DialogContent>
-					<TodoForm form={form} isEditing={isEditing} onSubmit={saveTodo} />
+					<TodoForm
+						form={form}
+						isEditing={isEditing}
+						onSubmit={saveTodo}
+						hasExistingFile={!!selectedTodo?.file}
+						onViewFile={() => selectedTodo && void handleViewFile(selectedTodo.id)}
+					/>
 				</DialogContent>
 			</Dialog>
 			<Toaster position="top-right" />
